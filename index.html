@@ -19,7 +19,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #15151D; /* A deeper, cleaner dark background */
+            background: linear-gradient(180deg, #15151D 0%, #20202A 100%); /* Subtle dark gradient */
             color: #F0F0F0; /* Slightly brighter off-white */
         }
         .tab-button {
@@ -138,6 +138,24 @@
         #form-status.error {
             color: #FF6B6B; /* Red for errors */
         }
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+        .scribble-arrow {
+            font-size: 2.5rem; /* Larger arrow */
+            color: #00C292; /* Teal color for the arrow */
+            text-shadow: 0 0 5px #00C292, 0 0 10px #00C292; /* Glowing effect for "scribble" feel */
+            animation: bounce 1.5s infinite; /* Subtle bouncing animation */
+            display: block; /* Ensures it takes its own line */
+            text-align: center;
+            margin-top: 1.5rem; /* Space above arrow */
+            margin-bottom: 0.5rem; /* Space below arrow */
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -146,7 +164,12 @@
         <header class="text-center mb-20">
             <h1 class="text-4xl md:text-6xl font-bold text-teal-400 mb-6 tracking-tight">Ride-Sharing App Development Plan</h1>
             <p class="text-xl md:text-2xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">A comprehensive overview of our technical approach, phased development, and crucial next steps to bring your vision for an intuitive ride-sharing platform in France to life.</p>
+            <p class="text-md md:text-lg text-neutral-400 mt-8 max-w-3xl mx-auto">
+                <span class="font-semibold text-teal-300">To explore the full plan, simply click on the tabs below.</span> This interactive guide allows you to navigate between our detailed development phases and the important requirement gathering questionnaire.
+            </p>
         </header>
+
+        <div class="scribble-arrow">&#x2B07;</div> <!-- Unicode down arrow for the "scribble arrow" effect -->
 
         <nav class="flex justify-center mb-16 border-b-2 border-[#3A3A4A] -mt-px relative z-0">
             <button class="tab-button active" data-tab="mvp-phase1">MVP Plan (Phase 1)</button>
@@ -328,9 +351,13 @@
             <!-- Requirement Gathering Section -->
             <section id="questionnaire" class="content-section">
                 <h2 class="text-3xl font-bold text-neutral-100 mb-10 text-center">Requirement Gathering: Understanding Your Vision</h2>
-                <p class="text-neutral-300 text-center mb-12 max-w-4xl mx-auto leading-relaxed">To ensure we align perfectly with your vision and build a solution that truly meets your needs, we have prepared a comprehensive questionnaire. Your detailed responses will be invaluable in shaping the project scope, prioritizing features, and designing an application that exceeds expectations for the French market.</p>
+                <p class="text-neutral-300 text-center mb-12 max-w-4xl mx-auto leading-relaxed">
+                    To ensure we align perfectly with your vision and build a solution that truly meets your needs, we have prepared a comprehensive questionnaire. Your detailed responses will be invaluable in shaping the project scope, prioritizing features, and designing an application that exceeds expectations for the French market.
+                    <br><br>
+                    <span class="font-semibold text-teal-300">Please use the provided text areas to answer each question thoroughly. Once completed, click the "Submit Requirements" button at the bottom to send your responses directly to our team.</span>
+                </p>
 
-                <form id="requirements-form" action="https://formspree.io/f/mvgrdkol" method="POST">
+                <form id="requirements-form" action="https://formspree.io/f/YOUR_FORMSPREE_ENDPOINT" method="POST">
                     <div class="space-y-8">
                         <div class="question-category">
                             <h3 class="text-xl font-semibold">I. Business & Market Strategy</h3>
@@ -611,18 +638,20 @@
                     }
                 });
                 // For nested questions (e.g., target audience, monetization model, etc.)
-                document.querySelectorAll('.question-category ul > li').forEach((li, index) => {
-                    // Check if it's a direct question with a label
+                document.querySelectorAll('.question-category ul > li').forEach((li) => {
+                    // Check if it's a direct question with a label. If not, it's a parent category with nested questions.
                     if (!li.querySelector('label')) {
-                        const questionText = li.textContent.split(': ')[0].trim(); // Get the main question text
+                        const directQuestionText = li.childNodes[0] ? li.childNodes[0].textContent.replace(':', '').trim() : ''; // Get the main question text before the ul
                         li.querySelectorAll('ul li label').forEach(nestedLabel => {
                             const nestedId = nestedLabel.getAttribute('for');
                             if (nestedId) {
-                                questionsMap[nestedId] = `${questionText} - ${nestedLabel.textContent.trim()}`;
+                                // Combine parent question text with nested question text for clarity
+                                questionsMap[nestedId] = directQuestionText ? `${directQuestionText} - ${nestedLabel.textContent.trim()}` : nestedLabel.textContent.trim();
                             }
                         });
                     }
                 });
+
 
                 // Construct a detailed payload including questions
                 const detailedPayload = {};
@@ -632,7 +661,7 @@
                     if (questionText) {
                         detailedPayload[questionText] = object[key];
                     } else {
-                        detailedPayload[key] = object[key]; // Fallback if question text not found
+                        detailedPayload[key] = object[key]; // Fallback if question text not found (shouldn't happen with proper mapping)
                     }
                 }
 
