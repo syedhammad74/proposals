@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Ride-Sharing App Development Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: "Soothing Neutrals & Slate Blue" - A calm palette using warm neutrals (bg-stone-100, bg-white) for a supportive base, with slate blue (bg-slate-600, border-slate-600) as a professional, trustworthy accent for interactive elements and highlights. -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard. The core structure uses a top-level tab navigation to switch between "MVP Tiers" and "Full Development". Within each stage, secondary tabs allow users to select "Tier 1", "Tier 2", or "Tier 3". This nested tab structure prevents overwhelming the user with a long scroll and facilitates direct comparison between tiers. The right side features dynamic charts that update based on selections, providing immediate visual context for cost and scope. This structure was chosen because it transforms a linear document into an exploratory tool, enabling users to actively compare options rather than passively read, which is more effective for complex decision-making. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: Tier Costs. Goal: Compare investment. Viz Method: Bar Chart (Chart.js/Canvas). Interaction: Chart updates when switching between MVP/Full dev views. Justification: Bar charts offer the clearest, most direct visual comparison of discrete financial values. Library: Chart.js.
+        2. Report Info: Feature Scope across categories (Frontend, Backend, Security, etc.). Goal: Visualize the growth in complexity and features per tier. Viz Method: Radar Chart (Chart.js/Canvas). Interaction: Chart redraws to show the 'shape' of the selected tier, with tooltips for detail. Justification: A radar chart provides a powerful, holistic snapshot of how balanced or focused each tier is across multiple domains. Library: Chart.js.
+        3. Report Info: Detailed tier features. Goal: Inform. Presentation Method: Toggled content panes (cards) using structured HTML/CSS. Interaction: Clicking tabs reveals corresponding feature lists. Justification: This standard UI pattern keeps the interface clean and focused, preventing information overload. Library/Method: Vanilla JS + Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* stone-100 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tab-active {
+            background-color: #475569; /* slate-600 */
+            color: white;
+            border-color: #475569; /* slate-600 */
+        }
+        .tab-inactive {
+            background-color: white;
+            color: #475569; /* slate-600 */
+            border-color: #e5e7eb; /* gray-200 */
+        }
+        .content-card ul {
+            list-style-position: inside;
+            padding-left: 0.5rem;
+        }
+        .content-card ul li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">Ride-Sharing App Development Plan</h1>
+            <p class="text-slate-600 mt-2 max-w-3xl mx-auto">An interactive guide to the development phases, features, and costs. Use the tabs below to explore the different tiers and see how the project scope and investment evolve.</p>
+        </header>
+
+        <main>
+            <div id="plan-selection" class="flex justify-center mb-6">
+                <div class="inline-flex rounded-lg shadow-sm">
+                    <button id="mvp-btn" class="plan-btn tab-active py-2 px-6 rounded-l-lg font-semibold transition-colors duration-300" data-plan="mvp">MVP Plan</button>
+                    <button id="full-btn" class="plan-btn tab-inactive py-2 px-6 rounded-r-lg font-semibold transition-colors duration-300" data-plan="full">Full Development</button>
+                </div>
+            </div>
+
+            <div id="tier-selection" class="flex justify-center mb-8">
+                 <div class="inline-flex rounded-lg shadow-sm">
+                    <button class="tier-btn tab-active py-2 px-5 text-sm md:text-base md:px-6 rounded-l-lg font-semibold transition-colors duration-300" data-tier="0">Tier 1</button>
+                    <button class="tier-btn tab-inactive py-2 px-5 text-sm md:text-base md:px-6 font-semibold transition-colors duration-300" data-tier="1">Tier 2</button>
+                    <button class="tier-btn tab-inactive py-2 px-5 text-sm md:text-base md:px-6 rounded-r-lg font-semibold transition-colors duration-300" data-tier="2">Tier 3</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div id="tier-details" class="lg:col-span-3 bg-white p-6 rounded-xl shadow-lg">
+                    <h2 id="tier-title" class="text-2xl font-bold text-slate-700 mb-1"></h2>
+                    <p id="tier-investment" class="text-lg font-semibold text-slate-500 mb-6"></p>
+                    <p id="tier-description" class="text-slate-600 mb-6"></p>
+                    <div id="tier-content" class="space-y-4"></div>
+                </div>
+
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-center text-slate-700 mb-4">Cost Comparison</h3>
+                         <div class="chart-container">
+                            <canvas id="costChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-center text-slate-700 mb-4">Feature Scope Analysis</h3>
+                        <div class="chart-container">
+                            <canvas id="scopeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const planData = {
+            mvp: {
+                name: "MVP Plan",
+                tiers: [
+                    {
+                        title: "Tier 1: Core Ride-Sharing Functionality",
+                        description: "This tier focuses on the absolute minimum required to test the core concept and gather initial user feedback.",
+                        investment: 1200,
+                        scope: { frontend: 1, backend: 1, cloud: 1, security: 1, ui_ux: 1, brand: 1 },
+                        features: [
+                            { category: 'Frontend', items: ["Simple User Authentication", "Rider: Map View, Manual Destination", "Rider: Basic Ride Status", "Driver: Online/Offline Toggle", "Driver: Accept/Reject Rides"] },
+                            { category: 'Backend', items: ["User Management", "Ride Management Logic", "Basic Driver Matching", "Basic Real-time Location", "Single Payment Gateway Integration"] },
+                            { category: 'Cloud & Security', items: ["Basic Compute & Database", "SSL/TLS Encryption", "Password Hashing"] },
+                            { category: 'Design & Brand', items: ["Wireframes & Low-Fidelity Mockups", "Focus on extreme simplicity", "Basic Logo & Color Palette"] },
+                        ]
+                    },
+                    {
+                        title: "Tier 2: Enhanced Usability & Driver Management",
+                        description: "Building on Tier 1, this tier adds features for a better user experience and more robust driver management.",
+                        investment: 1350,
+                        scope: { frontend: 2, backend: 2, cloud: 2, security: 2, ui_ux: 2, brand: 2 },
+                        features: [
+                            { category: 'Frontend', items: ["Ride History & Rating System", "Multiple Payment Methods", "Basic In-App Chat", "Push Notifications", "Driver Profile Management"] },
+                            { category: 'Backend', items: ["Advanced Driver Matching Algorithms", "Driver Payout System", "Robust Notification Service", "Basic Admin Dashboard"] },
+                            { category: 'Cloud & Security', items: ["Scalable/Containerized Services", "Replicated Database & CDN", "Two-Factor Authentication (2FA)"] },
+                            { category: 'Design & Brand', items: ["High-Fidelity Mockups", "Limited User Testing", "Accessibility Considerations", "Comprehensive Brand Guidelines"] },
+                        ]
+                    },
+                    {
+                        title: "Tier 3: Advanced Features & Scalability",
+                        description: "This tier includes more advanced features, focusing on efficiency, user convenience, and preparing for future growth.",
+                        investment: 1500,
+                        scope: { frontend: 3, backend: 3, cloud: 3, security: 3, ui_ux: 3, brand: 3 },
+                        features: [
+                            { category: 'Frontend', items: ["Fare Estimation & Scheduled Rides", "Multiple Service Types (Standard, XL)", "In-App Support & FAQ", "Driver Heatmaps & Destination Filters"] },
+                            { category: 'Backend', items: ["Dynamic Pricing Algorithms", "Predictive Dispatch Analytics", "Comprehensive Reporting", "Fraud Detection Mechanisms"] },
+                            { category: 'Cloud & Security', items: ["Serverless Architecture", "Data Warehousing", "GDPR Compliance Framework", "Regular Penetration Testing"] },
+                            { category: 'Design & Brand', items: ["Interactive Prototypes", "Detailed Design System", "Extensive User Testing", "Brand Story & Marketing Materials"] },
+                        ]
+                    }
+                ]
+            },
+            full: {
+                name: "Full Development Plan",
+                tiers: [
+                    {
+                        title: "Tier 1: Basic Complete Development",
+                        description: "Represents a fully robust version of the MVP with key enhancements for market readiness.",
+                        investment: 4000,
+                        scope: { frontend: 3.5, backend: 3.5, cloud: 3, security: 3, ui_ux: 3, brand: 3 },
+                        features: [
+                             { category: 'Frontend', items: ["Polished native app experience", "Refined UI elements and animations", "Advanced error handling", "Comprehensive driver onboarding flow"] },
+                             { category: 'Backend', items: ["Optimized database queries", "Scalable API architecture", "Full-featured admin panel", "Initial marketing integrations"] },
+                             { category: 'Cloud & Security', items: ["Production-ready infrastructure", "Automated backups", "Enhanced monitoring and alerts", "Full 2FA enforcement"] },
+                             { category: 'Design & Brand', items: ["Complete design system application", "Post-launch UI review cycle", "Full brand asset package"] },
+                        ]
+                    },
+                    {
+                        title: "Tier 2: Standard Complete Development",
+                        description: "A comprehensive, feature-rich application designed for scalability and a competitive edge.",
+                        investment: 5000,
+                        scope: { frontend: 4, backend: 4, cloud: 4, security: 4, ui_ux: 4, brand: 4 },
+                        features: [
+                             { category: 'Frontend', items: ["Advanced features like multi-stop trips", "Deeper third-party integrations (e.g., social logins)", "Offline functionality support", "Full accessibility compliance (WCAG 2.1 AA)"] },
+                             { category: 'Backend', items: ["Microservices architecture for key services", "Machine learning for pricing/matching", "Advanced analytics and business intelligence", "API for potential partners"] },
+                             { category: 'Cloud & Security', items: ["Multi-region deployment considerations", "Automated CI/CD pipelines", "Advanced threat intelligence", "Data encryption at rest"] },
+                             { category: 'Design & Brand', items: ["A/B testing framework for UI changes", "Data-driven UX improvements", "Internationalization/Localization support"] },
+                        ]
+                    },
+                    {
+                        title: "Tier 3: Premium Complete Development",
+                        description: "The ultimate platform, incorporating all advanced features with a focus on high performance, market leadership, and innovation.",
+                        investment: 6000,
+                        scope: { frontend: 5, backend: 5, cloud: 5, security: 5, ui_ux: 5, brand: 5 },
+                        features: [
+                             { category: 'Frontend', items: ["Cutting-edge UI with custom animations", "Gamification for drivers/riders", "Voice command integration", "Real-time augmented reality navigation features"] },
+                             { category: 'Backend', items: ["High-performance, low-latency infrastructure", "Real-time data streaming and processing", "AI-powered fraud prevention", "Predictive fleet management tools"] },
+                             { category: 'Cloud & Security', items: ["Fully fault-tolerant system", "Dedicated security operations team (SecOps) plan", "Compliance with highest industry standards (e.g., ISO 27001)", "Disaster recovery planning"] },
+                             { category: 'Design & Brand', items: ["Continuous user research and innovation lab", "Personalized user experiences", "Market-leading brand presence"] },
+                        ]
+                    }
+                ]
+            }
+        };
+
+        let currentPlan = 'mvp';
+        let currentTier = 0;
+        let costChart, scopeChart;
+
+        const categoryIcons = {
+            'Frontend': '📱',
+            'Backend': '⚙️',
+            'Cloud & Security': '☁️',
+            'Design & Brand': '🎨',
+        };
+
+        function renderTierDetails() {
+            const plan = planData[currentPlan];
+            const tier = plan.tiers[currentTier];
+
+            document.getElementById('tier-title').textContent = tier.title;
+            document.getElementById('tier-investment').textContent = `Investment: $${tier.investment.toLocaleString()}`;
+            document.getElementById('tier-description').textContent = tier.description;
+
+            const contentEl = document.getElementById('tier-content');
+            contentEl.innerHTML = '';
+
+            tier.features.forEach(featureSet => {
+                const categoryIcon = categoryIcons[featureSet.category] || '🔹';
+                const card = document.createElement('div');
+                card.className = 'content-card bg-stone-50 border border-stone-200 p-4 rounded-lg';
+                let itemsHtml = featureSet.items.map(item => `<li>${item}</li>`).join('');
+                card.innerHTML = `
+                    <h4 class="text-lg font-semibold text-slate-600 mb-2">${categoryIcon} ${featureSet.category}</h4>
+                    <ul class="text-slate-600 list-disc">${itemsHtml}</ul>
+                `;
+                contentEl.appendChild(card);
+            });
+        }
+
+        function updateButtons() {
+            document.querySelectorAll('.plan-btn').forEach(btn => {
+                btn.classList.toggle('tab-active', btn.dataset.plan === currentPlan);
+                btn.classList.toggle('tab-inactive', btn.dataset.plan !== currentPlan);
+            });
+            document.querySelectorAll('.tier-btn').forEach(btn => {
+                btn.classList.toggle('tab-active', parseInt(btn.dataset.tier) === currentTier);
+                btn.classList.toggle('tab-inactive', parseInt(btn.dataset.tier) !== currentTier);
+            });
+        }
+        
+        function createCostChart() {
+            const plan = planData[currentPlan];
+            const ctx = document.getElementById('costChart').getContext('2d');
+            
+            if (costChart) {
+                costChart.destroy();
+            }
+
+            costChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: plan.tiers.map((t, i) => `Tier ${i + 1}`),
+                    datasets: [{
+                        label: 'Investment Cost',
+                        data: plan.tiers.map(t => t.investment),
+                        backgroundColor: ['#cbd5e1', '#94a3b8', '#64748b'],
+                        borderColor: '#475569',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Cost: $${context.raw.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + (value / 1000) + 'k';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createScopeChart() {
+            const plan = planData[currentPlan];
+            const tier = plan.tiers[currentTier];
+            const ctx = document.getElementById('scopeChart').getContext('2d');
+
+            if (scopeChart) {
+                scopeChart.destroy();
+            }
+
+            const labels = ['Frontend', 'Backend', 'Cloud', 'Security', 'UI/UX', 'Brand'];
+            const data = Object.values(tier.scope);
+
+            scopeChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: tier.title,
+                        data: data,
+                        fill: true,
+                        backgroundColor: 'rgba(71, 85, 105, 0.2)', // slate-600 with opacity
+                        borderColor: 'rgb(71, 85, 105)', // slate-600
+                        pointBackgroundColor: 'rgb(71, 85, 105)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(71, 85, 105)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: '#d4d4d8' // stone-300
+                            },
+                             grid: {
+                                color: '#e7e5e4' // stone-200
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                }
+                            },
+                            ticks: {
+                                backdropColor: 'rgba(255,255,255,0.7)',
+                                stepSize: 1
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 5
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateAll() {
+            renderTierDetails();
+            updateButtons();
+            createCostChart();
+            createScopeChart();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.plan-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentPlan = btn.dataset.plan;
+                    currentTier = 0; // Reset to tier 1 when changing plan
+                    updateAll();
+                });
+            });
+
+            document.querySelectorAll('.tier-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentTier = parseInt(btn.dataset.tier);
+                    renderTierDetails();
+                    createScopeChart();
+                    updateButtons();
+                });
+            });
+
+            updateAll();
+        });
+    </script>
+</body>
+</html>
